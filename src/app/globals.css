@@ -9,6 +9,7 @@
   --color-muted: var(--muted);
   --color-muted-dark: var(--muted-dark);
   --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-card: var(--card);
   --color-card-border: var(--card-border);
@@ -30,6 +31,7 @@
   --muted: #a09ab5;
   --muted-dark: #6f6a7d;
   --success: #22c55e;
+  --warning: #f59e0b;
   --danger: #ef4444;
   --radius: 20px;
 }
@@ -57,30 +59,34 @@ body {
   min-height: 100vh;
 }
 
-/* Utilidades personalizadas */
+/* Glass card */
 .glass-card {
   background: var(--glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
+  transition: all 0.3s ease;
 }
 
+/* Glow effects */
 .glow-primary {
   box-shadow: 0 0 20px rgba(255, 43, 214, 0.35), 0 0 60px rgba(123, 97, 255, 0.15);
 }
 .glow-hover:hover {
   box-shadow: 0 0 30px rgba(255, 43, 214, 0.5), 0 0 80px rgba(123, 97, 255, 0.25);
-  transition: box-shadow 0.3s ease;
+  transform: translateY(-2px);
 }
 
+/* Text gradient */
 .text-gradient {
-  background: linear-gradient(to right, #ff2bd6, #7b61ff);
+  background: linear-gradient(to right, #ff2bd6, #7b61ff, #00d1ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* Hero grid */
 .hero-grid {
   background-image:
     linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
@@ -89,21 +95,185 @@ body {
   mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
 }
 
+/* Fade effects */
 .fade-bottom {
   mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
 }
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Button base */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--primary);
+  padding: 0.75rem 2rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 0 20px rgba(255, 43, 214, 0.35);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+}
+.btn-primary:hover {
+  background: rgba(255, 43, 214, 0.9);
+  box-shadow: 0 0 30px rgba(255, 43, 214, 0.5);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem 2rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 43, 214, 0.35); }
+  50% { box-shadow: 0 0 40px rgba(255, 43, 214, 0.6); }
+}
 
 /* Scrollbar premium */
-::-webkit-scrollbar {
-  width: 8px;
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--background-secondary); }
+::-webkit-scrollbar-thumb { background: var(--muted-dark); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
-::-webkit-scrollbar-track {
-  background: var(--background-secondary);
+.badge-new { background: rgba(0, 209, 255, 0.2); color: var(--accent); }
+.badge-hot { background: rgba(255, 43, 214, 0.2); color: var(--primary); }
+.badge-soon { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+
+/* =========================
+   OSMI PROFESSIONAL UI SYSTEM
+========================= */
+
+/* Search bar */
+.search-bar {
+  width: 100%;
+  height: 56px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0 20px 0 52px;
+  font-size: 14px;
+  color: var(--foreground);
+  outline: none;
+  transition: all 0.3s ease;
 }
-::-webkit-scrollbar-thumb {
-  background: var(--muted-dark);
-  border-radius: 4px;
+.search-bar:focus {
+  border-color: rgba(255, 43, 214, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 30px rgba(255, 43, 214, 0.08);
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--secondary);
+.search-bar::placeholder {
+  color: var(--muted-dark);
+}
+
+/* Hero badge profesional */
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 43, 214, 0.12);
+  border: 1px solid rgba(255, 43, 214, 0.2);
+  color: #ff4ddd;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Hero stat */
+.hero-stat {
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(to right, #ff2bd6, #7b61ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-stat-label {
+  color: var(--muted-dark);
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Event card premium */
+.event-card-premium {
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.event-card-premium:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 43, 214, 0.2);
+  box-shadow: 0 20px 60px rgba(255, 43, 214, 0.1);
+}
+
+/* Countdown block */
+.countdown-block {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  text-align: center;
+  min-width: 60px;
+}
+.countdown-number {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--foreground);
+  line-height: 1;
+}
+.countdown-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted-dark);
+  margin-top: 4px;
 }

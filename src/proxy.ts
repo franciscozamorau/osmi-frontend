@@ -20,12 +20,12 @@ export function proxy(request: NextRequest) {
     isHome ||
     path.startsWith("/events") ||
     path.startsWith("/login") ||
-    path.startsWith("/success");
+    path.startsWith("/success") ||
+    path.startsWith("/checkout");  // ← AGREGAR checkout como pública
 
-  // Rutas protegidas
+  // Rutas protegidas (solo dashboard requiere login)
   const isProtectedPath =
-    path.startsWith("/dashboard") ||
-    path.startsWith("/checkout");
+    path.startsWith("/dashboard");
 
   // Usuario NO autenticado intentando entrar a protegido
   if (!isAuthenticated && isProtectedPath) {

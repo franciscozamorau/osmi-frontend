@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
 
 import {
@@ -59,81 +65,94 @@ function getCookie(name: string) {
 // --------------------------------------------------
 
 async function resolveCustomerId() {
-  const token =
-    getCookie("token");
+  const token = getCookie("token");
 
   if (token) {
-    const userRes = await fetch(
-      `${API}/v1/users`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    try {
+      // PASO 1: Obtener el perfil del usuario autenticado
+      const userRes = await fetch(`${API}/v1/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      let userId = null;
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        userId = userData.user_id || userData.id;
       }
-    );
 
-    if (userRes.ok) {
-      const user =
-        await userRes.json();
-
-      const userId =
-        user.id ||
-        user.public_id ||
-        user.publicId;
-
-      const customerRes =
-        await fetch(
-          `${API}/v1/customers?user_id=${userId}`
-        );
-
-      if (customerRes.ok) {
-        const data =
-          await customerRes.json();
-
-        const customer =
-          data.customers?.[0];
-
-        if (customer) {
-          return (
-            customer.public_id ||
-            customer.publicId ||
-            String(customer.id)
-          );
+      // Si no existe /v1/auth/me, decodificar el JWT para obtener user_id
+      if (!userId) {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          userId = payload.user_id;
+        } catch (e) {
+          console.error("Error decodificando JWT:", e);
         }
       }
+
+      if (userId) {
+        // PASO 2: Buscar customer existente por user_id
+        const customerRes = await fetch(
+          `${API}/v1/customers?user_id=${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (customerRes.ok) {
+          const data = await customerRes.json();
+          const customers = data.customers || [];
+          
+          // Devolver el primer customer activo
+          if (customers.length > 0) {
+            return customers[0].publicId || customers[0].public_id || String(customers[0].id);
+          }
+        }
+
+        // PASO 3: Si no existe, crear customer vinculado al user_id
+        const createRes = await fetch(`${API}/v1/customers`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: "Usuario Osmi",
+            email: `user_${userId}@osmi.app`,
+            customer_type: "registered",
+            user_id: userId,
+          }),
+        });
+
+        if (createRes.ok) {
+          const customer = await createRes.json();
+          return customer.publicId || customer.public_id || String(customer.id);
+        }
+      }
+    } catch (err) {
+      console.error("Error resolviendo customer:", err);
     }
   }
 
-  const guestRes =
-    await fetch(
-      `${API}/v1/customers`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          name: "Invitado",
-          email: `guest_${Date.now()}@osmi.app`,
-          customer_type:
-            "guest",
-        }),
-      }
-    );
+  // Invitado: crear customer anónimo
+  try {
+    const guestRes = await fetch(`${API}/v1/customers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Invitado",
+        email: `guest_${Date.now()}@osmi.app`,
+        customer_type: "guest",
+      }),
+    });
 
-  if (!guestRes.ok) {
-    return null;
+    if (guestRes.ok) {
+      const guest = await guestRes.json();
+      return guest.publicId || guest.public_id || String(guest.id);
+    }
+  } catch (err) {
+    console.error("Error creando customer invitado:", err);
   }
 
-  const guest =
-    await guestRes.json();
-
-  return (
-    guest.public_id ||
-    guest.publicId ||
-    String(guest.id)
-  );
+  return null;
 }
 
 // --------------------------------------------------
@@ -145,7 +164,8 @@ function CheckoutForm({
 }: {
   clientSecret: string;
 }) {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const stripe =
     useStripe();
@@ -229,26 +249,19 @@ function CheckoutForm({
           "\n"
         )
       );
+
       return;
     }
 
-    setProcessing(
-      true
-    );
+    setProcessing(true);
 
-    const result =
-      await stripe.confirmPayment(
-        {
-          elements,
-          confirmParams:
-            {
-              return_url:
-                `${window.location.origin}/success`,
-            },
-          redirect:
-            "if_required",
-        }
-      );
+    const result = await stripe.confirmPayment({
+      elements,
+      redirect: "always",
+      confirmParams: {
+        return_url: `${window.location.origin}/success`,
+      },
+    });
 
     if (
       result.error
@@ -256,12 +269,10 @@ function CheckoutForm({
       setError(
         result.error
           .message ||
-          "Pago fallido"
+ "Pago fallido"
       );
 
-      setProcessing(
-        false
-      );
+      setProcessing(false);
 
       return;
     }
@@ -297,14 +308,10 @@ function CheckoutForm({
             items,
           ]) => (
             <div
-              key={
-                event
-              }
+              key={event}
             >
               <h2 className="font-bold mb-4">
-                {
-                  event
-                }
+                {event}
               </h2>
 
               {items.map(
@@ -359,7 +366,6 @@ function CheckoutForm({
 
       {/* PAYMENT */}
       <div className="glass-card p-6 mb-6">
-
         <PaymentElement />
 
         <div className="flex items-center gap-2 mt-4 text-xs text-muted-dark">
@@ -387,19 +393,13 @@ function CheckoutForm({
           <>
             <Loader2
               className="animate-spin"
-              size={
-                18
-              }
+              size={18}
             />
             Procesando...
           </>
         ) : (
           <>
-            <Lock
-              size={
-                16
-              }
-            />
+            <Lock size={16} />
             Pagar $
             {total.toLocaleString(
               "es-MX"
@@ -438,10 +438,30 @@ export default function CheckoutPage() {
   const router =
     useRouter();
 
+  // --------------------------------------------------
+  // FIX DOBLE REQUEST
+  // --------------------------------------------------
+
+  const initialized =
+    useRef(false);
+
   useEffect(() => {
+    if (
+      initialized.current
+    )
+      return;
+
+    initialized.current =
+      true;
+
     async function init() {
-      if (!tickets.length) {
-        router.push("/events");
+      if (
+        !tickets.length
+      ) {
+        router.push(
+          "/events"
+        );
+
         return;
       }
 
@@ -453,32 +473,39 @@ export default function CheckoutPage() {
         return;
       }
 
-      // PASO 1: Crear la orden PRIMERO
-      const order = await api.post(
-        "/v1/orders",
-        {
-          customer_id:
-            customerId,
+      // PASO 1:
+      // Crear orden
 
-          items:
-            tickets.map(
-              (t) => ({
-                ticket_type_id:
-                  t.ticketTypeId,
+      const order =
+        await api.post(
+          "/v1/orders",
+          {
+            customer_id:
+              customerId,
 
-                quantity:
-                  t.quantity,
-              })
-            ),
-        }
-      );
+            items:
+              tickets.map(
+                (
+                  t
+                ) => ({
+                  ticket_type_id:
+                    t.ticketTypeId,
+
+                  quantity:
+                    t.quantity,
+                })
+              ),
+          }
+        );
 
       const orderId =
         order.public_id ||
         order.publicId ||
         order.id;
 
-      // PASO 2: Crear PaymentIntent usando order_id
+      // PASO 2:
+      // Crear PaymentIntent
+
       const payment =
         await api.post(
           "/v1/payments/intent",
@@ -492,21 +519,17 @@ export default function CheckoutPage() {
         );
 
       setClientSecret(
-          payment.clientSecret || payment.client_secret
+        payment.client_secret ||
+          payment.clientSecret
       );
 
       setLoading(false);
     }
 
     init();
-  }, [
-    tickets,
-    router,
-  ]);
+  }, []);
 
-  if (
-    loading
-  ) {
+  if (loading) {
     return (
       <div className="min-h-screen">
         <Navbar />
@@ -518,9 +541,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (
-    !clientSecret
-  ) {
+  if (!clientSecret) {
     return null;
   }
 
